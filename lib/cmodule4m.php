@@ -21,6 +21,8 @@ class CModule4M
 	 */
 
 	protected static function randomPassword($groupIds) {
+		global $USER;
+
 		$groupPolicy = \CUser::GetGroupPolicy($groupIds);
 
 		$length = $groupPolicy['PASSWORD_LENGTH'];
@@ -35,12 +37,10 @@ class CModule4M
 		if ($groupPolicy['PASSWORD_PUNCTUATION'] == 'Y')
 			$alphabet = Random::ALPHABET_ALL;
 
-		$user = new \CUser();
-
 		do {
 			$password = Random::getStringByAlphabet($length, $alphabet);
 
-			$errors = $user->CheckPasswordAgainstPolicy($password, $groupPolicy);
+			$errors = $USER->CheckPasswordAgainstPolicy($password, $groupPolicy);
 		} while (!empty($errors));
 
 		return $password;
@@ -56,6 +56,8 @@ class CModule4M
 
 	static function onBeforeUserSendPassword(&$parameters)
 	{
+		global $USER;
+
 		$arguments = [
 			'select' => ['ID', 'EMAIL', 'NAME'],
 			'filter' => [
@@ -72,7 +74,7 @@ class CModule4M
 		if (!empty($user)) {
 			$password = self::randomPassword(UserTable::getUserGroupIds($user['ID']));
 
-			(new \CUser())->Update($user['ID'], ['PASSWORD' => $password]);
+			$USER->Update($user['ID'], ['PASSWORD' => $password]);
 
 			\Bitrix\Main\Mail\Event::send(
 				[
